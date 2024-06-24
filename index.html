@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Boxicons -->
+    <link href='https://unpkg.com/boxicons@2.0.9/css/boxicons.min.css' rel='stylesheet'>
+    <!-- My CSS -->
+    <link rel="stylesheet" href="css/style.css">
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <title>AdminHub</title>
+</head>
+<body>
+
+    <!-- SIDEBAR -->
+    <section id="sidebar">
+        <a href="#" class="brand">
+            <i class='bx bxs-smile'></i>
+            <span class="text">Imperial Tech</span>
+        </a>
+        <ul class="side-menu top">
+            <li class="active">
+                <a href="#" id="dashboard-link">
+                    <i class='bx bxs-dashboard' ></i>
+                    <span class="text">MENU PRINCIPAL</span>
+                </a>
+            </li>
+            <li>
+                <a href="#">
+                    <i class='bx bxs-shopping-bag-alt' ></i>
+                    <span class="text">My Store</span>
+                </a>
+            </li>
+            <li>
+                <a href="#" id="sales-analysis-link">
+                    <i class='bx bxs-bar-chart-alt-2' ></i>
+                    <span class="text">Analisis de Ventas</span>
+                </a>
+            </li>
+            <li>
+                <a href="#">
+                    <i class='bx bxs-message-dots' ></i>
+                    <span class="text">Message</span>
+                </a>
+            </li>
+            <li>
+                <a href="#">
+                    <i class='bx bxs-group' ></i>
+                    <span class="text">Team</span>
+                </a>
+            </li>
+        </ul>
+        <ul class="side-menu">
+            <li>
+                <a href="#">
+                    <i class='bx bxs-cog' ></i>
+                    <span class="text">Settings</span>
+                </a>
+            </li>
+            <li>
+                <a href="#" class="logout">
+                    <i class='bx bxs-log-out-circle' ></i>
+                    <span class="text">Logout</span>
+                </a>
+            </li>
+        </ul>
+    </section>
+    <!-- SIDEBAR -->
+
+    <!-- CONTENT -->
+    <section id="content">
+        <!-- NAVBAR -->
+        <nav>
+            <i class='bx bx-menu' ></i>
+            <a href="#" class="nav-link">Categories</a>
+            <form action="#">
+                <div class="form-input">
+                    <input type="search" placeholder="Search...">
+                    <button type="submit" class="search-btn"><i class='bx bx-search' ></i></button>
+                </div>
+            </form>
+            <input type="checkbox" id="switch-mode" hidden>
+            <label for="switch-mode" class="switch-mode"></label>
+            <a href="#" class="notification">
+                <i class='bx bxs-bell' ></i>
+                <span class="num">8</span>
+            </a>
+            <a href="#" class="profile">
+                <img src="img/people.png">
+            </a>
+        </nav>
+        <!-- NAVBAR -->
+
+        <!-- MAIN -->
+        <main id="main-content">
+            <img src="img/welcome.png" alt="Welcome" style="display: block; margin: 0 auto; width: 100%; max-width: 600px;">
+        </main>
+        <!-- MAIN -->
+    </section>
+    <!-- CONTENT -->
+
+    <!-- Scripts -->
+    <script>
+        // Cargar el contenido del dashboard cuando se haga clic en el enlace del dashboard
+        document.addEventListener("DOMContentLoaded", function() {
+            document.getElementById('dashboard-link').addEventListener('click', function(event) {
+                event.preventDefault();
+                fetch('dashboard.html')
+                    .then(response => response.text())
+                    .then(data => {
+                        document.getElementById('main-content').innerHTML = data;
+                    });
+            });
+        });
+
+        // Cargar el contenido del análisis de ventas cuando se haga clic en el enlace
+        document.addEventListener("DOMContentLoaded", function() {
+            document.getElementById('sales-analysis-link').addEventListener('click', function(event) {
+                event.preventDefault();
+                fetch('analisis_ventas.html')
+                    .then(response => response.text())
+                    .then(data => {
+                        document.getElementById('main-content').innerHTML = data;
+                        // Después de cargar analisis_ventas.html, ejecutar el código para obtener datos de ventas
+                        fetch('php/consulta_ventas.php')
+                            .then(response => {
+                                if (!response.ok) {
+                                    throw new Error('Network response was not ok');
+                                }
+                                return response.json();
+                            })
+                            .then(data => {
+                                console.log('Datos de ventas recibidos:', data);
+                                // Construir la tabla HTML con los datos de ventas
+                                let salesHTML = `
+                                    <table class="sales-table">
+                                        <thead>
+                                            <tr>
+                                                <th>ID</th>
+                                                <th>Usuario</th>
+                                                <th>Producto</th>
+                                                <th>Cantidad</th>
+                                                <th>Precio Total</th>
+                                                <th>Fecha Venta</th>
+                                                <th>Método de Pago</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                `;
+                                data.forEach(venta => {
+                                    salesHTML += `
+                                        <tr>
+                                            <td>${venta.id_venta}</td>
+                                            <td>${venta.nombre_usuario}</td>
+                                            <td>${venta.nombre_producto}</td>
+                                            <td>${venta.cantidad}</td>
+                                            <td>${venta.precio_total}</td>
+                                            <td>${venta.fecha_venta}</td>
+                                            <td>${venta.metodo_pago}</td>
+                                        </tr>
+                                    `;
+                                });
+                                salesHTML += `
+                                        </tbody>
+                                    </table>
+                                `;
+
+                                document.getElementById('sales-data').innerHTML = salesHTML;
+
+                                // Preparar los datos para el gráfico de ventas por producto
+                                const ventasPorProducto = {};
+                                data.forEach(venta => {
+                                    if (ventasPorProducto[venta.nombre_producto]) {
+                                        ventasPorProducto[venta.nombre_producto] += venta.cantidad;
+                                    } else {
+                                        ventasPorProducto[venta.nombre_producto] = venta.cantidad;
+                                    }
+                                });
+
+                                // Preparar etiquetas y datos para el gráfico de Chart.js
+                                const productos = Object.keys(ventasPorProducto);
+                                const cantidades = Object.values(ventasPorProducto);
+
+                                // Configurar y dibujar el gráfico con Chart.js
+                                const ctx = document.getElementById('salesChart').getContext('2d');
+                                new Chart(ctx, {
+                                    type: 'bar',
+                                    data: {
+                                        labels: productos,
+                                        datasets: [{
+                                            label: 'Ventas por Producto',
+                                            data: cantidades,
+                                            backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                                            borderColor: 'rgba(54, 162, 235, 1)',
+                                            borderWidth: 1
+                                        }]
+                                    },
+                                    options: {
+                                        scales: {
+                                            y: {
+                                                beginAtZero: true
+                                            }
+                                        }
+                                    }
+                                });
+
+                                        // Crear un objeto para almacenar las ventas por mes
+                                const ventasPorMes = {};
+                                // Iterar sobre cada venta en los datos obtenidos
+                                data.forEach(venta => {
+                                    // Obtener la fecha de venta y convertirla en un objeto de fecha en JavaScript
+                                    const fecha = new Date(venta.fecha_venta);
+
+                                    // Obtener el mes (los meses en JavaScript van de 0 a 11, por lo que se suma 1)
+                                    const mes = fecha.getMonth() + 1;
+
+                                    // Obtener el año de la fecha de venta
+                                    const anio = fecha.getFullYear();
+
+                                    // Crear una clave única para identificar el mes y el año en formato "AAAA-MM"
+                                    const claveMes = `${anio}-${mes < 10 ? '0' + mes : mes}`;
+
+                                    // Sumar el precio total de la venta al mes correspondiente en el objeto ventasPorMes
+                                    // Asegurar que se sume como número flotante
+                                    if (ventasPorMes[claveMes]) {
+                                        ventasPorMes[claveMes] += parseFloat(venta.precio_total);
+                                    } else {
+                                        ventasPorMes[claveMes] = parseFloat(venta.precio_total);
+                                    }
+                                });
+
+                                // Obtener las claves (meses) del objeto ventasPorMes y ordenarlas
+                                const meses = Object.keys(ventasPorMes).sort();
+
+                                // Obtener los totales de ventas por cada mes ordenados según las claves obtenidas
+                                const totalesPorMes = meses.map(mes => ventasPorMes[mes]);
+
+                                // Configurar y dibujar el gráfico de ventas por mes usando Chart.js
+                                const ctxMes = document.getElementById('monthlySalesChart').getContext('2d');
+                                new Chart(ctxMes, {
+                                    type: 'bar', // Tipo de gráfico: barras
+                                    data: {
+                                        labels: meses, // Etiquetas para el eje X (meses)
+                                        datasets: [{
+                                            label: 'Ventas por Mes', // Etiqueta para la leyenda
+                                            data: totalesPorMes, // Datos de ventas por mes
+                                            backgroundColor: 'rgba(75, 192, 192, 0.5)', // Color de fondo de las barras
+                                            borderColor: 'rgba(75, 192, 192, 1)', // Color del borde de las barras
+                                            borderWidth: 1 // Ancho del borde de las barras
+                                        }]
+                                    },
+                                    options: {
+                                        scales: {
+                                            y: {
+                                                beginAtZero: true // Empezar el eje Y desde cero
+                                            }
+                                        }
+                                    }
+                                });
+
+
+                             })
+                             .catch(error => console.error('Error al obtener datos de ventas:', error));
+                                });
+                            });
+                    });
+            </script>
+    <script src="js/script.js"></script>
+    <!-- End Scripts -->
+
+</body>
+</html>
